@@ -105,6 +105,8 @@ subroutine ibox_main_sub()
     !call slice%print()
     tdata => infile%extract('T',slice)
     state_host%Temperature = tdata(1,1,1,1)
+    deallocate(tdata)
+    nullify(tdata)
     write(6,*) 'At time step', j, 'in host model state_host%Temperature =', state_host%Temperature
     do i = 1, ncols
        call ccpp_physics_run(cdata(i), ierr=ierr)
