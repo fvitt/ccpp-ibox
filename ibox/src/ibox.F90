@@ -1,6 +1,8 @@
 module ibox_main
 
 use machine, only: kind_phys
+use input_file, only: input_file_type
+use input_slice, only : slice_type
 
 implicit none
 
@@ -44,10 +46,17 @@ subroutine ibox_main_sub()
   integer                                                :: ierr
   integer ,parameter :: ncols=1
   integer ,parameter :: nlevs=8
-  integer ,parameter :: ntimes=3
+  integer :: ntimes = 0
 
-  state_host%Temperature = 600.
+  character(len=*), parameter :: inputfile = '/terminator-data1/fvitt/micm_inputs/camchem4.cam.h0.0000-01-01-00000.nc'
+  type(input_file_type) :: infile
+  type(slice_type) :: slice
+  real, pointer :: tdata(:,:,:,:)=>null()
 
+  call infile%open( inputfile )
+
+  ntimes = infile%get_ntimes()
+  
   allocate(k_rateConst(3))
   allocate(my_co(nlevs))
   allocate(my_o3(nlevs))
@@ -88,7 +97,14 @@ subroutine ibox_main_sub()
   write(6,*) 'After initialization, my_o3(1)=',my_o3(1)
   write(6,*) ' '
 
+  slice = infile%set_slice( beglat=0.,endlat=0., beglon=180.,endlon=180., beglev=1000.,endlev=1000.)
+  slice%ntimes = 1
+
   do j = 1, ntimes
+    slice%begtime = j
+    !call slice%print()
+    tdata => infile%extract('T',slice)
+    state_host%Temperature = tdata(1,1,1,1)
     write(6,*) 'At time step', j, 'in host model state_host%Temperature =', state_host%Temperature
     do i = 1, ncols
        call ccpp_physics_run(cdata(i), ierr=ierr)
@@ -100,7 +116,6 @@ subroutine ibox_main_sub()
        write(6,*) ' At time j=',j,' my_co(1)=',my_co(1)
        write(6,*) ' At time j=',j,' my_o3(1)=',my_o3(1)
      end do
-     state_host%Temperature = state_host%Temperature - 100._kind_phys
   end do
 
 

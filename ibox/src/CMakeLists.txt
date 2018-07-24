@@ -35,6 +35,8 @@ ADD_SUBDIRECTORY(${MICM_SRC} ${CMAKE_BINARY_DIR}/MICM_chemistry)
 
 SET(micm_source_files ibox.F90
             micm_type_defs.f90
+	    input_slice.F90
+	    input_data.F90
             ../../MICM_chemistry/src/kinetic_type_defs.f90
 )
 
