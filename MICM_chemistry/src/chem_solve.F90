@@ -91,23 +91,25 @@ contains
 !> \section arg_table_chem_solve_init Argument Table
 !! | local_name | standard_name                                    | long_name                               | units       | rank | type      | kind      | intent | optional |
 !! |------------|--------------------------------------------------|-----------------------------------------|-------------|------|-----------|-----------|--------|----------|
-!! | co         | my_volume_mixing_ratio_co                        | CO volume mixing ratio                  | mole mole-1 |    1 | real      | kind_phys | inout  | F        |
-!! | o3         | my_volume_mixing_ratio_o3                        | O3 volume mixing ratio                  | mole mole-1 |    1 | real      | kind_phys | inout  | F        |
+!! | tune_factor| tuning factor for solver                         | tuning factor for solver                | mole mole-1 |    0 | real      | kind_phys | out    | F        |
 !! | errmsg     | error_message                                    | CCPP error message                      | none        |    0 | character | len=512   | out    | F        |
 !! | errflg     | error_flag                                       | CCPP error flag                         | flag        |    0 | integer   |           | out    | F        |
 !!
-  subroutine chem_solve_init (co, o3, errmsg, errflg)
+  subroutine chem_solve_init (tune_factor, errmsg, errflg)
 
     implicit none
 
     !--- arguments
-    real(kind_phys),pointer, intent(inout) :: co(:)
-    real(kind_phys),pointer, intent(inout) :: o3(:)
+    real(kind_phys), intent(out) :: tune_factor
     character(len=512), intent(out)   :: errmsg
     integer,          intent(out)   :: errflg
   
-    co(:) = 100_kind_phys
-    o3(:) = 1e-6_kind_phys
+    !--- initialize CCPP error handling variables
+    errmsg = ''
+    errflg = 0
+ 
+    ! Initialize the local solver variables
+    tune_factor = 2_kind_phys
 
   end subroutine chem_solve_init
 
@@ -115,21 +117,23 @@ contains
 !! | local_name | standard_name                                    | long_name                               | units       | rank | type      | kind      | intent | optional |
 !! |------------|--------------------------------------------------|-----------------------------------------|-------------|------|-----------|-----------|--------|----------|
 !! | k_rateConst| k_rate_constants                                 | k Rate Constants                        | none        |    1 | real      | kind_phys | in     | F        |
+!! | tune_factor| tuning factor for solver                         | tuning factor for solver                | mole mole-1 |    0 | real      | kind_phys | in     | F        |
 !! | co         | my_volume_mixing_ratio_co                        | CO  volume mixing ratio                 | mole mole-1 |    1 | real      | kind_phys | inout  | F        |
 !! | o3         | my_volume_mixing_ratio_o3                        | O3  volume mixing ratio                 | mole mole-1 |    1 | real      | kind_phys | inout  | F        |
 !! | errmsg     | error_message                                    | CCPP error message                      | none        |    0 | character | len=512   | out    | F        |
 !! | errflg     | error_flag                                       | CCPP error flag                         | flag        |    0 | integer   |           | out    | F        |
 !!
-  subroutine chem_solve_run ( k_rateConst, co, o3, errmsg, errflg)
+  subroutine chem_solve_run ( k_rateConst, tune_factor, co, o3, errmsg, errflg)
 
     implicit none
 
     !--- arguments
     real(kind_phys),pointer, intent(in)    :: k_rateConst(:)
+    real(kind_phys), intent(in)            :: tune_factor
     real(kind_phys), pointer,intent(inout) :: co(:)      
     real(kind_phys), pointer,intent(inout) :: o3(:)      
-    character(len=512), intent(out)   :: errmsg
-    integer,          intent(out)   :: errflg
+    character(len=512), intent(out)        :: errmsg
+    integer,          intent(out)          :: errflg
 
     !--- local variables
  
@@ -143,7 +147,7 @@ contains
     !--- actual code
     ! add your code here
 
-    co(:) = co(:)*k_rateConst(1)
+    co(:) = co(:)*k_rateConst(1) + tune_factor
     o3(:) = o3(:)*k_rateConst(3)
 
     ! in case of errors, set errflg to a value != 0,

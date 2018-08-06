@@ -98,41 +98,49 @@ contains
     character(len=512),      intent(out)   :: errmsg
     integer,                 intent(out)   :: errflg
     
+    ! This routine currently does nothing
+
     errmsg = ''
     errflg = 0
 
   end subroutine kinetic_init
 
 !> \section arg_table_kinetic_run  Argument Table
-!! | local_name | standard_name                                    | long_name                               | units       | rank | type      | kind      | intent | optional |
-!! |------------|--------------------------------------------------|-----------------------------------------|-------------|------|-----------|-----------|--------|----------|
-!! | T          | air_temperature                                  | Temperature                             | K           |    0 | real      | kind_phys | in     | F        |
-!! | k_rateConst| k_rate_constants                                 | k Rate Constants                        | none        |    1 | real      | kind_phys | inout  | F        |
-!! | errmsg     | error_message                                    | CCPP error message                      | none        |    0 | character | len=512   | out    | F        |
-!! | errflg     | error_flag                                       | CCPP error flag                         | flag        |    0 | integer   |           | out    | F        |
+!! | local_name | standard_name    | long_name            | units | rank | type      | kind      | intent | optional |
+!! |------------|------------------|----------------------|-------|------|-----------|-----------|--------|----------|
+!! | T          | air_temperature  | Temperature          | K     |    0 | real      | kind_phys | in     | F        |
+!! | k_rateConst| k_rate_constants | k Rate Constants     | none  |    1 | real      | kind_phys | inout  | F        |
+!! | errmsg     | error_message    | CCPP error message   | none  |    0 | character | len=512   | out    | F        |
+!! | errflg     | error_flag       | CCPP error flag      | flag  |    0 | integer   |           | out    | F        |
 !!
   subroutine kinetic_run  (T, k_rateConst, errmsg, errflg)
 
     implicit none
 
     !--- arguments
-    real(kind_phys),         intent(in)    :: T  ! temperature
-    real(kind_phys),pointer, intent(inout) :: k_rateConst(:)
+    real(kind_phys),         intent(in)    :: T 
+    real(kind_phys),pointer, intent(inout) :: k_rateConst(:)  
     character(len=512),      intent(out)   :: errmsg
     integer,                 intent(out)   :: errflg
 
-    real(kind_phys)  :: t_inverse
+    real(kind_phys)  :: t_inverse ! Inverse temperature
   
     errmsg = ''
     errflg = 0
+    
+    ! Check for an error, and if found set error flag and error message
+    if (T == 0_kind_phys) then
+       errflg = 1
+       errmsg = 'kinetic_run: Temperature is zero'
+       return
+    end if
 
     t_inverse = 1_kind_phys/T
 
-    k_rateConst(1) = 0.04_kind_phys  ! will be used for my_co
+    ! Calculate the k_rateConst fields
+    k_rateConst(1) = 0.04_kind_phys                       ! will be used for my_co
     k_rateConst(2) = 1e+4_kind_phys
     k_rateConst(3) = 1.5e7_kind_phys * exp(0 * t_inverse) ! will be used for my_o3
-
-    write(6,*) ' inside kinetic_run T=',T
 
   end subroutine kinetic_run
 

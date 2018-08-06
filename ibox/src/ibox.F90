@@ -6,13 +6,11 @@ use input_slice, only : slice_type
 
 implicit none
 
-!integer, parameter :: kind_phys = 8
-
 contains
 
 subroutine ibox_main_sub()
 
-! Add the CCPP specific types and functions
+  ! Add the CCPP specific types and functions
   use :: ccpp_api,                           &
          only: ccpp_t,                       &
                ccpp_init,                    &
@@ -22,25 +20,15 @@ subroutine ibox_main_sub()
                ccpp_physics_finalize,        &
                ccpp_field_add
 
-!  use :: iso_c_binding, only: c_loc
-
+! NOTE -- The variables managed by the CCPP are included in the the ccpp_modules.inc file in the "use" statements
 #include "ccpp_modules.inc"
 
   implicit none
 
-! Create a simplistic state variable
-  type my_state
-    real(kind_phys) :: Temperature
-  end type my_state
-  type(my_state), target :: state_host
 
   integer                           :: i, j
-  real (kind=8), pointer :: my_co(:)
-  real (kind=8), pointer :: my_o3(:)
-  character(len=512)     :: errmsg
-  integer :: errflg
 
-! Create the CCPP required cdata structure
+  ! Create the CCPP required cdata structure
   type(ccpp_t), allocatable, target                      :: cdata(:)
 
   integer                                                :: ierr
@@ -57,10 +45,16 @@ subroutine ibox_main_sub()
 
   ntimes = infile%get_ntimes()
   
+  ! Allocate the host variables
   allocate(k_rateConst(3))
   allocate(my_co(nlevs))
   allocate(my_o3(nlevs))
   allocate(cdata(ncols))
+
+  ! Initialize the host variables
+  state_host%Temperature = 200.
+  my_co(:) = 100_kind_phys
+  my_o3(:) = 1e-6_kind_phys
 
   do i = 1, ncols
 
@@ -71,19 +65,10 @@ subroutine ibox_main_sub()
           stop
       end if
 
-    !use ccpp_fields.inc to call ccpp_field_add for all variables to be exposed to CCPP (this is auto-generated from /src/ccpp/scripts/ccpp_prebuild.py - the script parses tables in the xxx_type_defs.f90)
+! use ccpp_fields.inc to call ccpp_field_add for all variables to be exposed to CCPP (this is auto-generated from /src/ccpp/scripts/ccpp_prebuild.py - the script parses tables in the ibox_var_defs.f90)
+#include "ccpp_fields.inc"
 
-#  include "ccpp_fields.inc"
-
-     ! Add the fields which are known by the host model that need to be passed to the schemes
-     !----------------------------------------------------
-     ! *** ORDER OF THIS FOLLOWING ccpp_field_add IS IMPORTANT!! ****
-     ! ** CAC NOTE ** This is added after the ccpp field which is added with a value of 0
-     !----------------------------------------------------
-
-     call ccpp_field_add(cdata(i), 'air_temperature', state_host%Temperature, ierr, 'K')
-
-      !initialize each column's physics
+      ! initialize each column's physics
       call ccpp_physics_init(cdata(i), ierr=ierr)
       if (ierr/=0) then
           write(*,'(a,i0,a)') 'An error occurred in ccpp_physics_init for column ', i, '. Exiting...'
@@ -100,6 +85,7 @@ subroutine ibox_main_sub()
   slice = infile%set_slice( beglat=0.,endlat=0., beglon=180.,endlon=180., beglev=1000.,endlev=1000.)
   slice%ntimes = 1
 
+  ! loop over all time steps
   do j = 1, ntimes
     slice%begtime = j
     !call slice%print()
@@ -111,6 +97,7 @@ subroutine ibox_main_sub()
     do i = 1, ncols
        call ccpp_physics_run(cdata(i), ierr=ierr)
        if (ierr/=0) then
+           write(*,*) errmsg
            write(*,'(a,i0,a)') 'An error occurred in ccpp_physics_run for column ', i, '. Exiting...'
            stop
        end if

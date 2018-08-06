@@ -104,7 +104,6 @@ else (PROJECT STREQUAL "CCPP-FV3")
       ./src/machine.F
       ./src/chem_solve.F90
       ./src/kinetic.F90
-      ./src/kinetic_type_defs.f90
   )
 endif (PROJECT STREQUAL "CCPP-FV3")
 
