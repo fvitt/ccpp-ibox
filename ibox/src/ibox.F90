@@ -3,6 +3,8 @@ module ibox_main
 use machine, only: kind_phys
 use input_file, only: input_file_type
 use input_slice, only : slice_type
+use json_loader, only : create_cnst_info_array
+use const_props_mod, only: const_props_type
 
 implicit none
 
@@ -41,6 +43,19 @@ subroutine ibox_main_sub()
   type(slice_type) :: slice
   real, pointer :: tdata(:,:,:,:)=>null()
 
+  type(const_props_type), pointer :: cnst_info(:)
+  integer :: ncnst
+  
+  character(len=*), parameter :: jsonfile = '/terminator-data1/home/fvitt/ccpp/inputs/tagfileoutput.195.json'
+!  character(len=*), parameter :: jsonfile = '/terminator-data1/home/fvitt/ccpp/inputs/tagfileoutput.161.json'
+  
+  cnst_info => create_cnst_info_array( jsonfile )
+
+  ncnst = size(cnst_info)
+  do i = 1,ncnst
+     call cnst_info(i)%print()
+  enddo
+  
   call infile%open( inputfile )
 
   ntimes = infile%get_ntimes()
