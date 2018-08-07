@@ -23,7 +23,7 @@ contains
     logical :: found
     integer :: n
     character(len=:),allocatable :: string
-    real(8) :: rval
+    real :: rval
 
     call json%initialize()
 
@@ -56,8 +56,10 @@ contains
           call cnst_info(n)%set_desc(string)
           deallocate(string)
 
-          call core%get(child3,'molecular_weight',rval)
-          call cnst_info(n)%set_wght(real(rval))
+          call core%get(child3,'molecular_weight',string)
+          read( string, * ) rval
+          deallocate(string)
+          call cnst_info(n)%set_wght(rval)
        else
           write(*,*) ' ERROR: Did not find child ',n
           call abort()
